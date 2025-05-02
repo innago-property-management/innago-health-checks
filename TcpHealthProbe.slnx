@@ -1,0 +1,11 @@
+﻿<Solution>
+  <Folder Name="/examples/">
+    <Project Path="examples\ConsoleAppWithProbe\ConsoleAppWithProbe.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src\TcpHealthProbe\TcpHealthProbe.csproj" Type="Classic C#" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests\UnitTests\UnitTests.csproj" Type="Classic C#" />
+  </Folder>
+</Solution>

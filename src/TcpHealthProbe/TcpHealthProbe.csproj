@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <AssemblyName>Innago.Shared.HealthChecks.TcpHealthProbe</AssemblyName>
+        <RootNamespace>Innago.Shared.HealthChecks.TcpHealthProbe</RootNamespace>
+        <EnableConfigurationBindingGenerator>true</EnableConfigurationBindingGenerator>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <PublishAot>true</PublishAot>
+        <Title>tcp health probe background service</Title>
+        <Description>A background hosted service intended for console apps so that they can have a health check.</Description>
+        <Copyright>2025 Innago</Copyright>
+        <PackageProjectUrl>https://github.com/innago-property-management/innago-tcp-health-probe/src/TcpHealthProbe</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/innago-property-management/innago-tcp-health-probe</RepositoryUrl>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <DocumentationFile>bin\Debug\net9.0\TcpHealthProbe.xml</DocumentationFile>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
+      <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.4" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.4" />
+      <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.4" />
+      <PackageReference Include="SonarAnalyzer.CSharp" Version="10.9.0.115408">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+      <None Remove="PublicAPI.Shipped.txt" />
+      <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+      <None Include="README.md" Pack="true" PackagePath="\" />  
+    </ItemGroup>
+
+</Project>

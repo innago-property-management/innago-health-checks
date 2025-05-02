@@ -1,1 +1,10 @@
 #nullable enable
+Innago.Shared.HealthChecks.TcpHealthProbe.HealthProbeConfiguration
+Innago.Shared.HealthChecks.TcpHealthProbe.HealthProbeConfiguration.HealthProbeConfiguration(int Port = 5555, int RefreshSeconds = 1) -> void
+Innago.Shared.HealthChecks.TcpHealthProbe.HealthProbeConfiguration.Port.get -> int
+Innago.Shared.HealthChecks.TcpHealthProbe.HealthProbeConfiguration.Port.init -> void
+Innago.Shared.HealthChecks.TcpHealthProbe.HealthProbeConfiguration.RefreshSeconds.get -> int
+Innago.Shared.HealthChecks.TcpHealthProbe.HealthProbeConfiguration.RefreshSeconds.init -> void
+Innago.Shared.HealthChecks.TcpHealthProbe.TcpHealthProbeService
+Innago.Shared.HealthChecks.TcpHealthProbe.TcpHealthProbeService.TcpHealthProbeService(Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckService! healthCheckService, Microsoft.Extensions.Logging.ILogger<Innago.Shared.HealthChecks.TcpHealthProbe.TcpHealthProbeService!>! logger, Microsoft.Extensions.Configuration.IConfiguration! configuration) -> void
+override Innago.Shared.HealthChecks.TcpHealthProbe.TcpHealthProbeService.ExecuteAsync(System.Threading.CancellationToken stoppingToken) -> System.Threading.Tasks.Task!
