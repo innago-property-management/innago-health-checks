@@ -1,18 +1,17 @@
 namespace Innago.Shared.HealthChecks.TcpHealthProbe;
 
 using System;
+using System.Threading.Tasks;
 
 internal static class BooleanExtensions
 {
-    public static void Match(this bool value, Action onTrue, Action onFalse)
+    public static Task MatchAsync(this bool value, Func<Task> onTrue, Func<Task> onFalse)
     {
-        if (value)
+        return FunctionToRun()();
+        
+        Func<Task> FunctionToRun()
         {
-            onTrue();
-        }
-        else
-        {
-            onFalse();
+            return value ? onTrue : onFalse;
         }
     }
 }

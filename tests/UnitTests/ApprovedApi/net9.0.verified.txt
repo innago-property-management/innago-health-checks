@@ -1,0 +1,16 @@
+﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/innago-property-management/innago-tcp-health-probe")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("UnitTests")]
+namespace Innago.Shared.HealthChecks.TcpHealthProbe
+{
+    public class HealthProbeConfiguration : System.IEquatable<Innago.Shared.HealthChecks.TcpHealthProbe.HealthProbeConfiguration>
+    {
+        public HealthProbeConfiguration(int Port = 5555, int RefreshSeconds = 1) { }
+        public int Port { get; init; }
+        public int RefreshSeconds { get; init; }
+    }
+    public class TcpHealthProbeService : Microsoft.Extensions.Hosting.BackgroundService
+    {
+        public TcpHealthProbeService(Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckService healthCheckService, Microsoft.Extensions.Logging.ILogger<Innago.Shared.HealthChecks.TcpHealthProbe.TcpHealthProbeService> logger, Microsoft.Extensions.Configuration.IConfiguration configuration) { }
+        protected override System.Threading.Tasks.Task ExecuteAsync(System.Threading.CancellationToken stoppingToken) { }
+    }
+}

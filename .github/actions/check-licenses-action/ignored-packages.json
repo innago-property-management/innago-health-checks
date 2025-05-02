@@ -1,0 +1,15 @@
+[
+  "SonarAnalyzer.CSharp",
+  "Serilog.Sinks.Grafana.Loki",
+  "System.Text.RegularExpressions",
+  "System.Net.Http",
+  "Moq",
+  "Moq.Analyzers",
+  "NETStandard.Library",
+  "FluentAssertions",
+  "Bogus",
+  "Innago.Shared.TryHelpers",
+  "System.Private.Uri",
+  "System.Net.Http",
+  "System.Text.RegularExpressions"
+]
