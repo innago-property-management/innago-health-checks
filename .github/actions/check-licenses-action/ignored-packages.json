@@ -8,5 +8,8 @@
   "NETStandard.Library",
   "FluentAssertions",
   "Bogus",
-  "Innago.Shared.TryHelpers"
+  "Innago.Shared.TryHelpers",
+  "System.Private.Uri",
+  "System.Net.Http",
+  "System.Text.RegularExpressions"
 ]
