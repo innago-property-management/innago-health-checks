@@ -1,4 +1,5 @@
-﻿[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("UnitTests")]
+﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/innago-property-management/innago-tcp-health-probe")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("UnitTests")]
 namespace Innago.Shared.HealthChecks.TcpHealthProbe
 {
     public class HealthProbeConfiguration : System.IEquatable<Innago.Shared.HealthChecks.TcpHealthProbe.HealthProbeConfiguration>
