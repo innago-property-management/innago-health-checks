@@ -10,7 +10,7 @@ A .NET 9 NuGet library that exposes a TCP listener as a health probe for console
 
 ```bash
 # Build
-dotnet build TcpHealthProbe.slnx
+dotnet build HealthChecks.slnx
 
 # Test
 dotnet test
