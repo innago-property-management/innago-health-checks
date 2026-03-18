@@ -1,1 +1,1 @@
-see https://github.com/innago-property-management/innago-tcp-health-probe/src/TcpHealthProbe/docs/Innago.Shared.HealthChecks.TcpHealthProbe.md
+see https://github.com/innago-property-management/innago-health-checks/src/TcpHealthProbe/docs/Innago.Shared.HealthChecks.TcpHealthProbe.md
