@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net9.0;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AssemblyName>Innago.Shared.HealthChecks.RabbitMq</AssemblyName>
+    <RootNamespace>Innago.Shared.HealthChecks.RabbitMq</RootNamespace>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <PublishAot>true</PublishAot>
+    <Title>Innago RabbitMQ Health Check</Title>
+    <Description>Tri-strategy RabbitMQ health check: DI IConnection, Vault secrets file, IConfiguration fallback.</Description>
+    <Copyright>2025 Innago</Copyright>
+    <PackageProjectUrl>https://github.com/innago-property-management/innago-health-checks/src/RabbitMqHealthCheck</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/innago-property-management/innago-health-checks</RepositoryUrl>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- No EnableConfigurationBindingGenerator: no IConfiguration.Get<T>() calls here.
+         Vault JSON AOT safety handled by VaultSecretsJsonContext (STJ source generation). -->
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DocumentationFile>bin\Debug\$(TargetFramework)\Innago.Shared.HealthChecks.RabbitMq.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Innago.Shared.TryHelpers" Version="*" />
+    <PackageReference Include="JetBrains.Annotations" Version="2024.3.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="9.0.14" />
+    <PackageReference Include="RabbitMQ.Client" Version="7.2.1" />
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="10.21.0.135717">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RabbitMqHealthCheck.Tests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+    <None Remove="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
