@@ -5,8 +5,11 @@ namespace Innago.Shared.HealthChecks.RabbitMq
 {
     public static class HealthChecksBuilderExtensions
     {
-        public static Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoRabbitMq(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder builder) { }
-        public static Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoRabbitMq(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder builder, System.Action<Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions> configure) { }
+        extension(Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder builder)
+        {
+            public Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoRabbitMq() { }
+            public Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoRabbitMq(System.Action<Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions> configure) { }
+        }
     }
     public sealed class RabbitMqHealthCheckOptions
     {
