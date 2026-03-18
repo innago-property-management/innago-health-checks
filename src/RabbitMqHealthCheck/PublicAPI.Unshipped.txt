@@ -1,7 +1,8 @@
 #nullable enable
 Innago.Shared.HealthChecks.RabbitMq.HealthChecksBuilderExtensions
-static Innago.Shared.HealthChecks.RabbitMq.HealthChecksBuilderExtensions.AddInnagoRabbitMq(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
-static Innago.Shared.HealthChecks.RabbitMq.HealthChecksBuilderExtensions.AddInnagoRabbitMq(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, System.Action<Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+Innago.Shared.HealthChecks.RabbitMq.HealthChecksBuilderExtensions.extension(Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!)
+Innago.Shared.HealthChecks.RabbitMq.HealthChecksBuilderExtensions.extension(Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!).AddInnagoRabbitMq() -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+Innago.Shared.HealthChecks.RabbitMq.HealthChecksBuilderExtensions.extension(Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!).AddInnagoRabbitMq(System.Action<Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
 Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions
 Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.RabbitMqHealthCheckOptions() -> void
 Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.ConnectionTimeout.get -> System.TimeSpan

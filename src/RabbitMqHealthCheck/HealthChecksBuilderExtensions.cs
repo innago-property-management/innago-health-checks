@@ -13,21 +13,21 @@ using Microsoft.Extensions.Logging;
 [PublicAPI]
 public static class HealthChecksBuilderExtensions
 {
-    /// <summary>
-    /// Adds the Innago RabbitMQ health check with default options.
-    /// Tags default to <c>["ready"]</c>; use the overload with <see cref="Action{T}"/> for customisation.
-    /// </summary>
-    public static IHealthChecksBuilder AddInnagoRabbitMq(
-        this IHealthChecksBuilder builder)
-        => AddInnagoRabbitMqCore(builder, null);
+    extension(IHealthChecksBuilder builder)
+    {
+        /// <summary>
+        /// Adds the Innago RabbitMQ health check with default options.
+        /// Tags default to <c>["ready"]</c>; use the overload with <see cref="Action{T}"/> for customisation.
+        /// </summary>
+        public IHealthChecksBuilder AddInnagoRabbitMq()
+            => AddInnagoRabbitMqCore(builder, null);
 
-    /// <summary>
-    /// Adds the Innago RabbitMQ health check with full options configuration.
-    /// </summary>
-    public static IHealthChecksBuilder AddInnagoRabbitMq(
-        this IHealthChecksBuilder builder,
-        Action<RabbitMqHealthCheckOptions> configure)
-        => AddInnagoRabbitMqCore(builder, configure);
+        /// <summary>
+        /// Adds the Innago RabbitMQ health check with full options configuration.
+        /// </summary>
+        public IHealthChecksBuilder AddInnagoRabbitMq(Action<RabbitMqHealthCheckOptions> configure)
+            => AddInnagoRabbitMqCore(builder, configure);
+    }
 
     private static IHealthChecksBuilder AddInnagoRabbitMqCore(
         IHealthChecksBuilder builder,

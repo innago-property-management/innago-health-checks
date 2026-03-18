@@ -1,7 +1,8 @@
 #nullable enable
 Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions
-static Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions.AddInnagoNpgsql(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
-static Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions.AddInnagoNpgsql(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, System.Action<Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions.extension(Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!)
+Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions.extension(Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!).AddInnagoNpgsql() -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions.extension(Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!).AddInnagoNpgsql(System.Action<Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
 Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions
 Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.NpgsqlHealthCheckOptions() -> void
 Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.CommandText.get -> string!

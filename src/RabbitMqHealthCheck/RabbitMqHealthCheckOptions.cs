@@ -21,5 +21,5 @@ public sealed class RabbitMqHealthCheckOptions
     public string Name { get; set; } = "rabbitmq";
 
     /// <summary>When true, Strategy 1 (DI IConnection) is skipped. Default: false.</summary>
-    public bool IgnoreDiConnection { get; set; } = false;
+    public bool IgnoreDiConnection { get; set; }
 }

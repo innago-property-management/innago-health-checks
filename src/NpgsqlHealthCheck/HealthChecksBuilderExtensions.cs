@@ -13,26 +13,25 @@ using Microsoft.Extensions.Logging;
 [PublicAPI]
 public static class HealthChecksBuilderExtensions
 {
-    /// <summary>Adds the Innago Npgsql health check with default options.</summary>
     /// <param name="builder">The health checks builder.</param>
-    /// <returns>The <see cref="IHealthChecksBuilder"/> for chaining.</returns>
-    public static IHealthChecksBuilder AddInnagoNpgsql(
-        this IHealthChecksBuilder builder)
+    extension(IHealthChecksBuilder builder)
     {
-        return Register(builder, new NpgsqlHealthCheckOptions());
-    }
+        /// <summary>Adds the Innago Npgsql health check with default options.</summary>
+        /// <returns>The <see cref="IHealthChecksBuilder"/> for chaining.</returns>
+        public IHealthChecksBuilder AddInnagoNpgsql()
+        {
+            return Register(builder, new NpgsqlHealthCheckOptions());
+        }
 
-    /// <summary>Adds the Innago Npgsql health check with a configuration action.</summary>
-    /// <param name="builder">The health checks builder.</param>
-    /// <param name="configure">Action to configure <see cref="NpgsqlHealthCheckOptions"/>.</param>
-    /// <returns>The <see cref="IHealthChecksBuilder"/> for chaining.</returns>
-    public static IHealthChecksBuilder AddInnagoNpgsql(
-        this IHealthChecksBuilder builder,
-        Action<NpgsqlHealthCheckOptions> configure)
-    {
-        var options = new NpgsqlHealthCheckOptions();
-        configure(options);
-        return Register(builder, options);
+        /// <summary>Adds the Innago Npgsql health check with a configuration action.</summary>
+        /// <param name="configure">Action to configure <see cref="NpgsqlHealthCheckOptions"/>.</param>
+        /// <returns>The <see cref="IHealthChecksBuilder"/> for chaining.</returns>
+        public IHealthChecksBuilder AddInnagoNpgsql(Action<NpgsqlHealthCheckOptions> configure)
+        {
+            var options = new NpgsqlHealthCheckOptions();
+            configure(options);
+            return Register(builder, options);
+        }
     }
 
     private static IHealthChecksBuilder Register(IHealthChecksBuilder builder, NpgsqlHealthCheckOptions options)
