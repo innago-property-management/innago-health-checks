@@ -11,6 +11,17 @@
       "sealed_at": "2026-03-18T15:11:46.974035+00:00",
       "sealed_by_identity": "chris@innago.com",
       "sealed_by_commit": "8af66fdc49001cee82bba0a8729ae9daae914f0f"
+    },
+    "session-1773846708-claude": {
+      "branch": "claude",
+      "worktree": "/tmp/health",
+      "started_at": "2026-03-18T15:11:48.700967+00:00",
+      "agent": "unknown",
+      "chain_hash": "sha256:1b5e639243a7417505cc42908edb726ce8ceea75c33c15c1e9c1d20089ffae14",
+      "sealed": true,
+      "sealed_at": "2026-03-18T15:15:41.036023+00:00",
+      "sealed_by_identity": "chris@innago.com",
+      "sealed_by_commit": "1b886f3f6f7eab787c15e82eea3d0ca6c697a091"
     }
   }
 }
