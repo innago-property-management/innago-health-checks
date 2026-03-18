@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0",
+  "chains": {
+    "session-1773843550-feat-dynamic-health-checks": {
+      "branch": "feat/dynamic-health-checks",
+      "worktree": "/Volumes/Repos/innago-tcp-health-probe",
+      "started_at": "2026-03-18T14:19:10.209339+00:00",
+      "agent": "unknown",
+      "chain_hash": "sha256:7435d8685e0d3996adcb838af0fb56508c02cda133a0d46bbedae54cd59d1923",
+      "sealed": true,
+      "sealed_at": "2026-03-18T15:11:46.974035+00:00",
+      "sealed_by_identity": "chris@innago.com",
+      "sealed_by_commit": "8af66fdc49001cee82bba0a8729ae9daae914f0f"
+    }
+  }
+}

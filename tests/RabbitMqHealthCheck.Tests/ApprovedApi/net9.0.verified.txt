@@ -1,0 +1,20 @@
+﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/innago-property-management/innago-health-checks")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("DynamicProxyGenAssembly2")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("RabbitMqHealthCheck.Tests")]
+namespace Innago.Shared.HealthChecks.RabbitMq
+{
+    public static class HealthChecksBuilderExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoRabbitMq(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder builder) { }
+        public static Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoRabbitMq(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder builder, System.Action<Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions> configure) { }
+    }
+    public sealed class RabbitMqHealthCheckOptions
+    {
+        public RabbitMqHealthCheckOptions() { }
+        public System.TimeSpan ConnectionTimeout { get; set; }
+        public bool IgnoreDiConnection { get; set; }
+        public string Name { get; set; }
+        public string[] Tags { get; set; }
+        public string VaultSecretsPath { get; set; }
+    }
+}

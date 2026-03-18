@@ -1,0 +1,16 @@
+#nullable enable
+Innago.Shared.HealthChecks.RabbitMq.HealthChecksBuilderExtensions
+static Innago.Shared.HealthChecks.RabbitMq.HealthChecksBuilderExtensions.AddInnagoRabbitMq(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+static Innago.Shared.HealthChecks.RabbitMq.HealthChecksBuilderExtensions.AddInnagoRabbitMq(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, System.Action<Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.RabbitMqHealthCheckOptions() -> void
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.ConnectionTimeout.get -> System.TimeSpan
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.ConnectionTimeout.set -> void
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.IgnoreDiConnection.get -> bool
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.IgnoreDiConnection.set -> void
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.Name.get -> string!
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.Name.set -> void
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.Tags.get -> string![]!
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.Tags.set -> void
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.VaultSecretsPath.get -> string!
+Innago.Shared.HealthChecks.RabbitMq.RabbitMqHealthCheckOptions.VaultSecretsPath.set -> void

@@ -1,0 +1,18 @@
+#nullable enable
+Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions
+static Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions.AddInnagoNpgsql(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+static Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions.AddInnagoNpgsql(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder! builder, System.Action<Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder!
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.NpgsqlHealthCheckOptions() -> void
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.CommandText.get -> string!
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.CommandText.set -> void
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.ConnectionStringName.get -> string?
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.ConnectionStringName.set -> void
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.ConnectionTimeout.get -> System.TimeSpan
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.ConnectionTimeout.set -> void
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.Name.get -> string!
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.Name.set -> void
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.Tags.get -> string![]!
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.Tags.set -> void
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.VaultSecretsPath.get -> string!
+Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions.VaultSecretsPath.set -> void

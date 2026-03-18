@@ -1,0 +1,21 @@
+﻿[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/innago-property-management/innago-health-checks")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("DynamicProxyGenAssembly2")]
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("NpgsqlHealthCheck.Tests")]
+namespace Innago.Shared.HealthChecks.Npgsql
+{
+    public static class HealthChecksBuilderExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoNpgsql(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder builder) { }
+        public static Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoNpgsql(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder builder, System.Action<Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions> configure) { }
+    }
+    public sealed class NpgsqlHealthCheckOptions
+    {
+        public NpgsqlHealthCheckOptions() { }
+        public string CommandText { get; set; }
+        public string? ConnectionStringName { get; set; }
+        public System.TimeSpan ConnectionTimeout { get; set; }
+        public string Name { get; set; }
+        public string[] Tags { get; set; }
+        public string VaultSecretsPath { get; set; }
+    }
+}

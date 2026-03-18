@@ -1,11 +1,19 @@
-﻿<Solution>
+<Solution>
   <Folder Name="/examples/">
-    <Project Path="examples\ConsoleAppWithProbe\ConsoleAppWithProbe.csproj" Type="Classic C#" />
+    <Project Path="examples\ConsoleAppWithProbe\ConsoleAppWithProbe.csproj" Type="C#" />
   </Folder>
   <Folder Name="/src/">
-    <Project Path="src\TcpHealthProbe\TcpHealthProbe.csproj" Type="Classic C#" />
+    <Project Path="src\TcpHealthProbe\TcpHealthProbe.csproj" Type="C#" />
+  </Folder>
+  <Folder Name="/src/NpgsqlHealthCheck/">
+    <Project Path="src/NpgsqlHealthCheck/Innago.Shared.HealthChecks.Npgsql.csproj" />
+  </Folder>
+  <Folder Name="/src/RabbitMqHealthCheck/">
+    <Project Path="src/RabbitMqHealthCheck/Innago.Shared.HealthChecks.RabbitMq.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests\UnitTests\UnitTests.csproj" Type="Classic C#" />
+    <Project Path="tests/NpgsqlHealthCheck.Tests/NpgsqlHealthCheck.Tests.csproj" />
+    <Project Path="tests/RabbitMqHealthCheck.Tests/RabbitMqHealthCheck.Tests.csproj" />
+    <Project Path="tests\UnitTests\UnitTests.csproj" Type="C#" />
   </Folder>
 </Solution>

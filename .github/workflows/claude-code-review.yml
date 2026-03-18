@@ -1,0 +1,26 @@
+name: PR Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+  id-token: write
+
+jobs:
+  review:
+    uses: innago-property-management/Oui-DELIVER/.github/workflows/claude-code-review.yml@main
+    with:
+      allow_approve: true
+      additional_context: |
+        This is a TypeScript/Node.js project (cygnus-anamnesis — the memory/knowledge
+        layer for Cygnus AI agents). Focus on:
+        - TypeScript strict mode compliance
+        - Proper async/await and error handling
+        - Jest test patterns and mock correctness
+        - OTel instrumentation completeness
+    secrets:
+      anthropicKey: ${{ secrets.ANTHROPIC_API_KEY }}
