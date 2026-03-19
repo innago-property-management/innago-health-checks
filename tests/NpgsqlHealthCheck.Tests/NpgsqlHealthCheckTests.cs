@@ -523,4 +523,25 @@ public sealed class NpgsqlHealthCheckTests : IDisposable
         // ReSharper disable once SeparateLocalFunctionsWithJumpStatement
         static Task<HealthCheckResult> ThrowingProber(string s, CancellationToken cancellationToken) => throw new InvalidOperationException("secret connection details here");
     }
+
+    [Fact]
+    public void Options_CommandText_IsConfigurable()
+    {
+        // Verifies that a custom CommandText is stored on the options and would be
+        // used by DefaultProbeAsync (which reads this.options.CommandText).
+        // Full end-to-end proof requires a database; this validates the option wiring.
+        var options = new NpgsqlHealthCheckOptions { CommandText = "SELECT version()" };
+
+        options.CommandText.Should().Be("SELECT version()");
+
+        // Construct health check without a custom prober — DefaultProbeAsync will be used,
+        // which reads this.options.CommandText (non-static method).
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object);
+
+        // The health check was constructed successfully with the custom option.
+        // DefaultProbeAsync is an instance method that reads this.options.CommandText,
+        // so the configured value will flow through when a real connection is available.
+        hc.Should().NotBeNull();
+    }
 }

@@ -248,3 +248,4 @@ FodyWeavers.xsd
 *.sln.iml
 /.idea/.idea.TcpHealthProbe/.idea/.gitignore
 /.idea/.idea.TcpHealthProbe/.idea/encodings.xml
+.idea/**/git_toolbox_prj.xml
