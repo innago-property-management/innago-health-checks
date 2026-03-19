@@ -17,7 +17,7 @@ using RabbitMQ.Client;
 using Xunit.OpenCategories;
 
 [Category("RabbitMqHealthCheck")]
-public class RabbitMqHealthCheckTests
+public class RabbitMqHealthCheckTests : IDisposable
 {
     #region Options defaults
 
@@ -28,7 +28,7 @@ public class RabbitMqHealthCheckTests
 
         options.VaultSecretsPath.Should().Be("/vault/secrets/appsettings.json");
         options.ConnectionTimeout.Should().Be(TimeSpan.FromSeconds(5));
-        options.Tags.Should().BeEquivalentTo(new[] { "ready" });
+        options.Tags.Should().BeEquivalentTo("ready");
         options.Name.Should().Be("rabbitmq");
         options.IgnoreDiConnection.Should().BeFalse();
     }
@@ -45,8 +45,8 @@ public class RabbitMqHealthCheckTests
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.AddHealthChecks().AddInnagoRabbitMq();
 
-        using var sp = services.BuildServiceProvider();
-        var hcOptions = sp.GetRequiredService<IOptions<HealthCheckServiceOptions>>().Value;
+        using ServiceProvider sp = services.BuildServiceProvider();
+        HealthCheckServiceOptions hcOptions = sp.GetRequiredService<IOptions<HealthCheckServiceOptions>>().Value;
 
         hcOptions.Registrations.Should().ContainSingle(r => r.Name == "rabbitmq");
     }
@@ -59,11 +59,11 @@ public class RabbitMqHealthCheckTests
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.AddHealthChecks().AddInnagoRabbitMq(opts => opts.Tags = ["live", "custom"]);
 
-        using var sp = services.BuildServiceProvider();
-        var hcOptions = sp.GetRequiredService<IOptions<HealthCheckServiceOptions>>().Value;
-        var reg = hcOptions.Registrations.Single(r => r.Name == "rabbitmq");
+        using ServiceProvider sp = services.BuildServiceProvider();
+        HealthCheckServiceOptions hcOptions = sp.GetRequiredService<IOptions<HealthCheckServiceOptions>>().Value;
+        HealthCheckRegistration reg = hcOptions.Registrations.Single(r => r.Name == "rabbitmq");
 
-        reg.Tags.Should().BeEquivalentTo(new[] { "live", "custom" });
+        reg.Tags.Should().BeEquivalentTo("live", "custom");
     }
 
     [Fact]
@@ -74,8 +74,8 @@ public class RabbitMqHealthCheckTests
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder().Build());
         services.AddHealthChecks().AddInnagoRabbitMq(opts => opts.Name = "my-rabbit");
 
-        using var sp = services.BuildServiceProvider();
-        var hcOptions = sp.GetRequiredService<IOptions<HealthCheckServiceOptions>>().Value;
+        using ServiceProvider sp = services.BuildServiceProvider();
+        HealthCheckServiceOptions hcOptions = sp.GetRequiredService<IOptions<HealthCheckServiceOptions>>().Value;
 
         hcOptions.Registrations.Should().ContainSingle(r => r.Name == "my-rabbit");
     }
@@ -87,15 +87,15 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy1_ConnectionIsOpen_ReturnsHealthy()
     {
-        var mockConnection = new Mock<IConnection>();
+        var mockConnection = new Mock<IConnection>(MockBehavior.Loose);
         mockConnection.Setup(c => c.IsOpen).Returns(true);
 
         var sp = new Mock<IServiceProvider>(MockBehavior.Strict);
         sp.Setup(s => s.GetService(typeof(IConnection))).Returns(mockConnection.Object);
 
-        var check = MakeHealthCheck(sp.Object);
+        RabbitMqHealthCheck check = MakeHealthCheck(sp.Object);
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Healthy);
     }
@@ -103,15 +103,15 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy1_ConnectionIsNotOpen_ReturnsUnhealthy()
     {
-        var mockConnection = new Mock<IConnection>();
+        var mockConnection = new Mock<IConnection>(MockBehavior.Loose);
         mockConnection.Setup(c => c.IsOpen).Returns(false);
 
         var sp = new Mock<IServiceProvider>(MockBehavior.Strict);
         sp.Setup(s => s.GetService(typeof(IConnection))).Returns(mockConnection.Object);
 
-        var check = MakeHealthCheck(sp.Object);
+        RabbitMqHealthCheck check = MakeHealthCheck(sp.Object);
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("not open");
@@ -124,9 +124,9 @@ public class RabbitMqHealthCheckTests
         var sp = new Mock<IServiceProvider>(MockBehavior.Strict);
         sp.Setup(s => s.GetService(typeof(IConnection))).Returns((object?)null);
 
-        var check = MakeHealthCheck(sp.Object);
+        RabbitMqHealthCheck check = MakeHealthCheck(sp.Object);
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("No RabbitMQ connection or configuration found");
@@ -144,11 +144,11 @@ public class RabbitMqHealthCheckTests
         // But we need to allow it not to be called, so don't set it up
 
         var options = new RabbitMqHealthCheckOptions { IgnoreDiConnection = true };
-        var check = MakeHealthCheck(sp.Object, options: options);
+        RabbitMqHealthCheck check = MakeHealthCheck(sp.Object, options: options);
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
-        // No DI, no vault, no config → unhealthy with "no strategy" message
+        // No DI, no vault, no config → unhealthy with a "no strategy" message
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("No RabbitMQ connection or configuration found");
     }
@@ -160,26 +160,31 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy2_VaultFileAbsent_FallsThroughToStrategy3()
     {
-        var sp = MakeNoConnectionServiceProvider();
-        var config = MakeConfiguration(new Dictionary<string, string?>
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
+
+        IConfiguration config = MakeConfiguration(new Dictionary<string, string?>
         {
             ["RabbitMQ:Host"] = "fallback-host",
         });
 
-        bool proberCalled = false;
+        var proberCalled = false;
+
         var options = new RabbitMqHealthCheckOptions
         {
             VaultSecretsPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString(), "nonexistent.json"),
         };
 
-        var check = MakeHealthCheck(sp, config, options, prober: (factory, _) =>
-        {
-            proberCalled = true;
-            factory.HostName.Should().Be("fallback-host");
-            return Task.FromResult(HealthCheckResult.Healthy());
-        });
+        RabbitMqHealthCheck check = MakeHealthCheck(sp,
+            config,
+            options,
+            prober: (factory, _) =>
+            {
+                proberCalled = true;
+                factory.HostName.Should().Be("fallback-host");
+                return Task.FromResult(HealthCheckResult.Healthy());
+            });
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Healthy);
         proberCalled.Should().BeTrue();
@@ -188,7 +193,7 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy2_VaultFilePresentWithAllKeys_CallsProber()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = WriteTempVaultFile(new Dictionary<string, string>
         {
             ["rabbit_host"] = "vault-host",
             ["rabbit_username"] = "vault-user",
@@ -197,17 +202,19 @@ public class RabbitMqHealthCheckTests
             ["rabbit_port"] = "5672",
         });
 
-        var sp = MakeNoConnectionServiceProvider();
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
         var options = new RabbitMqHealthCheckOptions { VaultSecretsPath = vaultPath };
         ConnectionFactory? capturedFactory = null;
 
-        var check = MakeHealthCheck(sp, options: options, prober: (factory, _) =>
-        {
-            capturedFactory = factory;
-            return Task.FromResult(HealthCheckResult.Healthy());
-        });
+        RabbitMqHealthCheck check = MakeHealthCheck(sp,
+            options: options,
+            prober: (factory, _) =>
+            {
+                capturedFactory = factory;
+                return Task.FromResult(HealthCheckResult.Healthy());
+            });
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Healthy);
         capturedFactory.Should().NotBeNull();
@@ -221,17 +228,17 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy2_VaultFilePresentHostAbsent_ReturnsUnhealthy()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = WriteTempVaultFile(new Dictionary<string, string>
         {
             ["rabbit_username"] = "user",
             ["rabbit_password"] = "pass",
         });
 
-        var sp = MakeNoConnectionServiceProvider();
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
         var options = new RabbitMqHealthCheckOptions { VaultSecretsPath = vaultPath };
-        var check = MakeHealthCheck(sp, options: options);
+        RabbitMqHealthCheck check = MakeHealthCheck(sp, options: options);
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("rabbit_host");
@@ -240,17 +247,17 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy2_VaultFilePresentUsernameAbsent_ReturnsUnhealthy()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = WriteTempVaultFile(new Dictionary<string, string>
         {
             ["rabbit_host"] = "host",
             ["rabbit_password"] = "pass",
         });
 
-        var sp = MakeNoConnectionServiceProvider();
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
         var options = new RabbitMqHealthCheckOptions { VaultSecretsPath = vaultPath };
-        var check = MakeHealthCheck(sp, options: options);
+        RabbitMqHealthCheck check = MakeHealthCheck(sp, options: options);
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("rabbit_username");
@@ -259,17 +266,17 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy2_VaultFilePresentPasswordAbsent_ReturnsUnhealthy()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = WriteTempVaultFile(new Dictionary<string, string>
         {
             ["rabbit_host"] = "host",
             ["rabbit_username"] = "user",
         });
 
-        var sp = MakeNoConnectionServiceProvider();
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
         var options = new RabbitMqHealthCheckOptions { VaultSecretsPath = vaultPath };
-        var check = MakeHealthCheck(sp, options: options);
+        RabbitMqHealthCheck check = MakeHealthCheck(sp, options: options);
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("rabbit_password");
@@ -278,25 +285,30 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy2_VaultFileMalformed_ReturnsUnhealthy_DoesNotFallThrough()
     {
-        var vaultPath = Path.GetTempFileName();
-        File.WriteAllText(vaultPath, "not valid json {{{");
+        string vaultPath = Path.GetTempFileName();
+        await File.WriteAllTextAsync(vaultPath, "not valid json {{{");
 
-        var sp = MakeNoConnectionServiceProvider();
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
+
         // Add config that would succeed in Strategy 3 — should NOT be reached
-        var config = MakeConfiguration(new Dictionary<string, string?>
+        IConfiguration config = MakeConfiguration(new Dictionary<string, string?>
         {
             ["RabbitMQ:Host"] = "should-not-reach",
         });
 
-        bool proberCalled = false;
+        var proberCalled = false;
         var options = new RabbitMqHealthCheckOptions { VaultSecretsPath = vaultPath };
-        var check = MakeHealthCheck(sp, config, options, prober: (_, _) =>
-        {
-            proberCalled = true;
-            return Task.FromResult(HealthCheckResult.Healthy());
-        });
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        RabbitMqHealthCheck check = MakeHealthCheck(sp,
+            config,
+            options,
+            prober: (_, _) =>
+            {
+                proberCalled = true;
+                return Task.FromResult(HealthCheckResult.Healthy());
+            });
+
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("Vault file could not be parsed");
@@ -310,8 +322,9 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy3_RabbitMQHostConfigured_CallsProber()
     {
-        var sp = MakeNoConnectionServiceProvider();
-        var config = MakeConfiguration(new Dictionary<string, string?>
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
+
+        IConfiguration config = MakeConfiguration(new Dictionary<string, string?>
         {
             ["RabbitMQ:Host"] = "config-host",
             ["RabbitMQ:Username"] = "config-user",
@@ -319,13 +332,16 @@ public class RabbitMqHealthCheckTests
         });
 
         ConnectionFactory? capturedFactory = null;
-        var check = MakeHealthCheck(sp, config, prober: (factory, _) =>
-        {
-            capturedFactory = factory;
-            return Task.FromResult(HealthCheckResult.Healthy());
-        });
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        RabbitMqHealthCheck check = MakeHealthCheck(sp,
+            config,
+            prober: (factory, _) =>
+            {
+                capturedFactory = factory;
+                return Task.FromResult(HealthCheckResult.Healthy());
+            });
+
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Healthy);
         capturedFactory!.HostName.Should().Be("config-host");
@@ -336,20 +352,24 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy3_MassTransitHostConfigured_CallsProber()
     {
-        var sp = MakeNoConnectionServiceProvider();
-        var config = MakeConfiguration(new Dictionary<string, string?>
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
+
+        IConfiguration config = MakeConfiguration(new Dictionary<string, string?>
         {
             ["MassTransit:RabbitMq:Host"] = "mt-host",
         });
 
         ConnectionFactory? capturedFactory = null;
-        var check = MakeHealthCheck(sp, config, prober: (factory, _) =>
-        {
-            capturedFactory = factory;
-            return Task.FromResult(HealthCheckResult.Healthy());
-        });
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        RabbitMqHealthCheck check = MakeHealthCheck(sp,
+            config,
+            prober: (factory, _) =>
+            {
+                capturedFactory = factory;
+                return Task.FromResult(HealthCheckResult.Healthy());
+            });
+
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Healthy);
         capturedFactory!.HostName.Should().Be("mt-host");
@@ -358,20 +378,24 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy3_RabbitHostConfigured_CallsProber()
     {
-        var sp = MakeNoConnectionServiceProvider();
-        var config = MakeConfiguration(new Dictionary<string, string?>
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
+
+        IConfiguration config = MakeConfiguration(new Dictionary<string, string?>
         {
             ["rabbit_host"] = "flat-host",
         });
 
         ConnectionFactory? capturedFactory = null;
-        var check = MakeHealthCheck(sp, config, prober: (factory, _) =>
-        {
-            capturedFactory = factory;
-            return Task.FromResult(HealthCheckResult.Healthy());
-        });
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        RabbitMqHealthCheck check = MakeHealthCheck(sp,
+            config,
+            prober: (factory, _) =>
+            {
+                capturedFactory = factory;
+                return Task.FromResult(HealthCheckResult.Healthy());
+            });
+
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Healthy);
         capturedFactory!.HostName.Should().Be("flat-host");
@@ -380,12 +404,12 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy3_NoHostConfigured_ReturnsUnhealthy()
     {
-        var sp = MakeNoConnectionServiceProvider();
-        var config = MakeConfiguration(new Dictionary<string, string?>());
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
+        IConfiguration config = MakeConfiguration(new Dictionary<string, string?>());
 
-        var check = MakeHealthCheck(sp, config);
+        RabbitMqHealthCheck check = MakeHealthCheck(sp, config);
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("No RabbitMQ connection or configuration found");
@@ -394,18 +418,22 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Strategy3_UsesGuestDefaults_WhenCredentialsAbsent()
     {
-        var sp = MakeNoConnectionServiceProvider();
-        var config = MakeConfiguration(new Dictionary<string, string?>
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
+
+        IConfiguration config = MakeConfiguration(new Dictionary<string, string?>
         {
             ["RabbitMQ:Host"] = "some-host",
         });
 
         ConnectionFactory? capturedFactory = null;
-        var check = MakeHealthCheck(sp, config, prober: (factory, _) =>
-        {
-            capturedFactory = factory;
-            return Task.FromResult(HealthCheckResult.Healthy());
-        });
+
+        RabbitMqHealthCheck check = MakeHealthCheck(sp,
+            config,
+            prober: (factory, _) =>
+            {
+                capturedFactory = factory;
+                return Task.FromResult(HealthCheckResult.Healthy());
+            });
 
         await check.CheckHealthAsync(MakeContext());
 
@@ -421,28 +449,33 @@ public class RabbitMqHealthCheckTests
     public async Task StrategyOrder_VaultFilePresentBlocksStrategy3()
     {
         // Vault file present with all keys → prober fails → should NOT fall through to Strategy 3
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = WriteTempVaultFile(new Dictionary<string, string>
         {
             ["rabbit_host"] = "vault-host",
             ["rabbit_username"] = "vault-user",
             ["rabbit_password"] = "vault-pass",
         });
 
-        var sp = MakeNoConnectionServiceProvider();
-        var config = MakeConfiguration(new Dictionary<string, string?>
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
+
+        IConfiguration config = MakeConfiguration(new Dictionary<string, string?>
         {
             ["RabbitMQ:Host"] = "config-host",
         });
 
         var options = new RabbitMqHealthCheckOptions { VaultSecretsPath = vaultPath };
-        var check = MakeHealthCheck(sp, config, options, prober: (factory, _) =>
-        {
-            // Vault prober returns unhealthy
-            factory.HostName.Should().Be("vault-host");
-            return Task.FromResult(HealthCheckResult.Unhealthy("vault probe failed"));
-        });
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        RabbitMqHealthCheck check = MakeHealthCheck(sp,
+            config,
+            options,
+            prober: (factory, _) =>
+            {
+                // Vault prober returns unhealthy
+                factory.HostName.Should().Be("vault-host");
+                return Task.FromResult(HealthCheckResult.Unhealthy("vault probe failed"));
+            });
+
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("vault probe failed");
@@ -451,29 +484,32 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task StrategyOrder_DITakesPrecedenceOverVault()
     {
-        // DI connection is open AND vault file exists → should return healthy from DI, not touch vault
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        // DI connection is open, AND a vault file exists → should return healthy from DI, not touch vault
+        string vaultPath = WriteTempVaultFile(new Dictionary<string, string>
         {
             ["rabbit_host"] = "vault-host",
             ["rabbit_username"] = "vault-user",
             ["rabbit_password"] = "vault-pass",
         });
 
-        var mockConnection = new Mock<IConnection>();
+        var mockConnection = new Mock<IConnection>(MockBehavior.Loose);
         mockConnection.Setup(c => c.IsOpen).Returns(true);
 
         var sp = new Mock<IServiceProvider>(MockBehavior.Strict);
         sp.Setup(s => s.GetService(typeof(IConnection))).Returns(mockConnection.Object);
 
-        bool proberCalled = false;
+        var proberCalled = false;
         var options = new RabbitMqHealthCheckOptions { VaultSecretsPath = vaultPath };
-        var check = MakeHealthCheck(sp.Object, options: options, prober: (_, _) =>
-        {
-            proberCalled = true;
-            return Task.FromResult(HealthCheckResult.Healthy());
-        });
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        RabbitMqHealthCheck check = MakeHealthCheck(sp.Object,
+            options: options,
+            prober: (_, _) =>
+            {
+                proberCalled = true;
+                return Task.FromResult(HealthCheckResult.Healthy());
+            });
+
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Healthy);
         proberCalled.Should().BeFalse();
@@ -486,12 +522,12 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task NoStrategy_ReturnsUnhealthyWithDescriptiveMessage()
     {
-        var sp = MakeNoConnectionServiceProvider();
-        var config = MakeConfiguration(new Dictionary<string, string?>());
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
+        IConfiguration config = MakeConfiguration(new Dictionary<string, string?>());
 
-        var check = MakeHealthCheck(sp, config);
+        RabbitMqHealthCheck check = MakeHealthCheck(sp, config);
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Be("No RabbitMQ connection or configuration found.");
@@ -500,16 +536,19 @@ public class RabbitMqHealthCheckTests
     [Fact]
     public async Task Prober_ExceptionIsCaught_ReturnsUnhealthySanitizedMessage()
     {
-        var sp = MakeNoConnectionServiceProvider();
-        var config = MakeConfiguration(new Dictionary<string, string?>
+        IServiceProvider sp = MakeNoConnectionServiceProvider();
+
+        IConfiguration config = MakeConfiguration(new Dictionary<string, string?>
         {
             ["RabbitMQ:Host"] = "some-host",
         });
 
-        var check = MakeHealthCheck(sp, config, prober: (_, _) =>
-            throw new InvalidOperationException("secret connection string info"));
+        RabbitMqHealthCheck check = MakeHealthCheck(sp,
+            config,
+            prober: (_, _) =>
+                throw new InvalidOperationException("secret connection string info"));
 
-        var result = await check.CheckHealthAsync(MakeContext());
+        HealthCheckResult result = await check.CheckHealthAsync(MakeContext());
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         // Should NOT contain the raw exception message
@@ -530,6 +569,7 @@ public class RabbitMqHealthCheckTests
         Func<ConnectionFactory, CancellationToken, Task<HealthCheckResult>>? prober = null)
     {
         configuration ??= MakeConfiguration(new Dictionary<string, string?>());
+
         options ??= new RabbitMqHealthCheckOptions
         {
             // Default to a non-existent path so vault strategy falls through
@@ -540,7 +580,7 @@ public class RabbitMqHealthCheckTests
             serviceProvider,
             configuration,
             options,
-            Mock.Of<ILogger<RabbitMqHealthCheck>>(),
+            Mock.Of<ILogger<RabbitMqHealthCheck>>(MockBehavior.Loose),
             prober);
     }
 
@@ -564,18 +604,36 @@ public class RabbitMqHealthCheckTests
         {
             Registration = new HealthCheckRegistration(
                 "rabbitmq",
-                Mock.Of<IHealthCheck>(),
+                Mock.Of<IHealthCheck>(MockBehavior.Loose),
                 failureStatus: null,
                 tags: null),
         };
     }
 
-    private static string WriteTempVaultFile(Dictionary<string, string> secrets)
+    private readonly List<string> tempFiles = [];
+
+    private string WriteTempVaultFile(Dictionary<string, string> secrets)
     {
-        var path = Path.GetTempFileName();
-        var json = System.Text.Json.JsonSerializer.Serialize(secrets);
+        string path = Path.GetTempFileName();
+        this.tempFiles.Add(path);
+        string json = System.Text.Json.JsonSerializer.Serialize(secrets);
         File.WriteAllText(path, json);
         return path;
+    }
+
+    public void Dispose()
+    {
+        foreach (string path in this.tempFiles)
+        {
+            try
+            {
+                File.Delete(path);
+            }
+            catch
+            {
+                // Best-effort cleanup
+            }
+        }
     }
 
     #endregion

@@ -6,8 +6,6 @@ using System.Runtime.CompilerServices;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
-using Innago.Shared.HealthChecks.Npgsql;
-
 using PublicApiGenerator;
 
 using VerifyTests.DiffPlex;

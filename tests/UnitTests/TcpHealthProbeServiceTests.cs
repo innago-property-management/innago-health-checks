@@ -107,14 +107,14 @@ public class TcpHealthProbeServiceTests
         HealthStatus healthStatus = HealthStatus.Healthy,
         Dictionary<string, string?>? configValues = null)
     {
-        return (new Mock<TcpHealthProbeService>(
+        return new Mock<TcpHealthProbeService>(
             MockBehavior.Loose,
             MakeHealthCheckService(healthStatus),
             MakeLogger(),
             MakeConfiguration(configValues))
         {
             CallBase = true,
-        }).Object;
+        }.Object;
     }
 
     private static IConfiguration MakeConfiguration(Dictionary<string, string?>? configValues = null)

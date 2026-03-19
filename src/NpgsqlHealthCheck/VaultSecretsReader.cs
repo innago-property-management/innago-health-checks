@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 [JsonSerializable(typeof(Dictionary<string, string>))]
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
-internal partial class VaultSecretsJsonContext : JsonSerializerContext;
+internal partial class VaultSecretsJsonContext : JsonSerializerContext { }
 
 internal readonly record struct VaultSecrets(Dictionary<string, string> Values);
 
@@ -25,7 +25,8 @@ internal static class VaultSecretsReader
         try
         {
             string json = File.ReadAllText(path);
-            var dict = JsonSerializer.Deserialize(json, VaultSecretsJsonContext.Default.DictionaryStringString);
+            Dictionary<string, string>? dict = JsonSerializer.Deserialize(json, VaultSecretsJsonContext.Default.DictionaryStringString);
+
             return dict is null
                 ? new Result<VaultSecrets?>((VaultSecrets?)null)
                 : new Result<VaultSecrets?>(new VaultSecrets(dict));
@@ -40,7 +41,7 @@ internal static class VaultSecretsReader
         }
         catch (Exception ex)
         {
-            LogMessages.VaultFileReadError(logger, path, ex);
+            logger.VaultFileReadError(path, ex);
             return new Result<VaultSecrets?>(ex);
         }
     }

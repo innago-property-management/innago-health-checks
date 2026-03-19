@@ -15,6 +15,7 @@ using VerifyTests.DiffPlex;
 using Xunit.OpenCategories;
 
 [Category("RabbitMqHealthCheck")]
+[SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed")]
 public class RabbitMqApprovalTests
 {
     private const string SourceFolder = "src/";
@@ -61,7 +62,7 @@ public class RabbitMqApprovalTests
     }
 
     // Ensure the reference assembly for RabbitMqHealthCheckOptions is loaded
-    private static readonly Type _referenceType = typeof(RabbitMqHealthCheckOptions);
+    private static readonly Type ReferenceType = typeof(RabbitMqHealthCheckOptions);
 
     [SuppressMessage("Major Code Smell", "S1144:Unused private types or members should be removed", Justification = "False Positive")]
     private class TargetFrameworksTheoryData : TheoryData<string>

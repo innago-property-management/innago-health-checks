@@ -16,34 +16,38 @@ using Moq;
 using Xunit.OpenCategories;
 
 [Category("NpgsqlHealthCheck")]
-public class NpgsqlHealthCheckTests : IDisposable
+public sealed class NpgsqlHealthCheckTests : IDisposable
 {
-    private readonly Mock<ILogger<Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck>> _loggerMock = new(MockBehavior.Loose);
-    private readonly List<string> _tempFiles = [];
+    private readonly Mock<ILogger<NpgsqlHealthCheck>> loggerMock = new(MockBehavior.Loose);
+    private readonly List<string> tempFiles = [];
 
     public void Dispose()
     {
-        foreach (var f in _tempFiles)
+        foreach (string f in this.tempFiles)
         {
-            try { File.Delete(f); }
-            catch { /* best effort */ }
+            try
+            {
+                File.Delete(f);
+            }
+            catch
+            {
+                /* best effort */
+            }
         }
-
-        GC.SuppressFinalize(this);
     }
 
     private string WriteTempVaultFile(Dictionary<string, string> secrets)
     {
-        var path = Path.GetTempFileName();
-        _tempFiles.Add(path);
+        string path = Path.GetTempFileName();
+        this.tempFiles.Add(path);
         File.WriteAllText(path, JsonSerializer.Serialize(secrets));
         return path;
     }
 
     private string WriteTempVaultFile(string rawContent)
     {
-        var path = Path.GetTempFileName();
-        _tempFiles.Add(path);
+        string path = Path.GetTempFileName();
+        this.tempFiles.Add(path);
         File.WriteAllText(path, rawContent);
         return path;
     }
@@ -58,6 +62,7 @@ public class NpgsqlHealthCheckTests : IDisposable
     {
         string? captured = null;
         getCaptured = () => captured;
+
         return (cs, _) =>
         {
             captured = cs;
@@ -74,7 +79,7 @@ public class NpgsqlHealthCheckTests : IDisposable
 
         options.VaultSecretsPath.Should().Be("/vault/secrets/appsettings.json");
         options.ConnectionTimeout.Should().Be(TimeSpan.FromSeconds(5));
-        options.Tags.Should().BeEquivalentTo(["ready"]);
+        options.Tags.Should().BeEquivalentTo("ready");
         options.Name.Should().Be("npgsql");
         options.CommandText.Should().Be("SELECT 1");
         options.ConnectionStringName.Should().BeNull();
@@ -86,12 +91,12 @@ public class NpgsqlHealthCheckTests : IDisposable
     public void Registration_AddsNamedHealthCheck_WithDefaultName()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IConfiguration>(BuildConfig(new Dictionary<string, string?>()));
+        services.AddSingleton(BuildConfig(new Dictionary<string, string?>()));
         services.AddLogging();
         services.AddHealthChecks().AddInnagoNpgsql();
 
-        using var provider = services.BuildServiceProvider();
-        var registrations = provider.GetServices<HealthCheckRegistration>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEnumerable<HealthCheckRegistration> registrations = provider.GetServices<HealthCheckRegistration>();
 
         registrations.Should().ContainSingle(r => r.Name == "npgsql");
     }
@@ -100,27 +105,28 @@ public class NpgsqlHealthCheckTests : IDisposable
     public void Registration_WithTags_UsesProvidedTags()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IConfiguration>(BuildConfig(new Dictionary<string, string?>()));
+        services.AddSingleton(BuildConfig(new Dictionary<string, string?>()));
         services.AddLogging();
-        services.AddHealthChecks().AddInnagoNpgsql(opts => opts.Tags = new[] { "live", "ready" });
+        services.AddHealthChecks().AddInnagoNpgsql(opts => opts.Tags = ["live", "ready"]);
 
-        using var provider = services.BuildServiceProvider();
-        var registration = provider.GetServices<HealthCheckRegistration>()
+        using ServiceProvider provider = services.BuildServiceProvider();
+
+        HealthCheckRegistration registration = provider.GetServices<HealthCheckRegistration>()
             .Single(r => r.Name == "npgsql");
 
-        registration.Tags.Should().BeEquivalentTo(["live", "ready"]);
+        registration.Tags.Should().BeEquivalentTo("live", "ready");
     }
 
     [Fact]
     public void Registration_WithOptions_UsesOptionsName()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IConfiguration>(BuildConfig(new Dictionary<string, string?>()));
+        services.AddSingleton(BuildConfig(new Dictionary<string, string?>()));
         services.AddLogging();
         services.AddHealthChecks().AddInnagoNpgsql(o => o.Name = "pg-custom");
 
-        using var provider = services.BuildServiceProvider();
-        var registrations = provider.GetServices<HealthCheckRegistration>();
+        using ServiceProvider provider = services.BuildServiceProvider();
+        IEnumerable<HealthCheckRegistration> registrations = provider.GetServices<HealthCheckRegistration>();
 
         registrations.Should().ContainSingle(r => r.Name == "pg-custom");
     }
@@ -130,15 +136,16 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy1_DefaultConnectionConfigured_CallsProber()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=test",
         });
-        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
-        var prober = CaptureProber(out var getCaptured);
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, prober);
-        var result = await hc.CheckHealthAsync(null);
+        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
+        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Healthy);
         getCaptured().Should().Be("Host=localhost;Database=test");
@@ -147,15 +154,16 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy1_DatabaseConnectionConfigured_CallsProber()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["ConnectionStrings:Database"] = "Host=db;Database=mydb",
         });
-        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
-        var prober = CaptureProber(out var getCaptured);
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, prober);
-        var result = await hc.CheckHealthAsync(null);
+        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
+        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Healthy);
         getCaptured().Should().Be("Host=db;Database=mydb");
@@ -164,19 +172,21 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy1_ConnectionStringName_UsesNamedKey()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["ConnectionStrings:MyCustomDb"] = "Host=custom;Database=customdb",
         });
+
         var options = new NpgsqlHealthCheckOptions
         {
             ConnectionStringName = "MyCustomDb",
             VaultSecretsPath = "/nonexistent/path",
         };
-        var prober = CaptureProber(out var getCaptured);
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, prober);
-        var result = await hc.CheckHealthAsync(null);
+        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Healthy);
         getCaptured().Should().Be("Host=custom;Database=customdb");
@@ -185,15 +195,16 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy1_ConnectionStringName_Null_TriesDefaultConnectionThenDatabase()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["ConnectionStrings:Database"] = "Host=fallback;Database=fallbackdb",
         });
-        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
-        var prober = CaptureProber(out var getCaptured);
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, prober);
-        var result = await hc.CheckHealthAsync(null);
+        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
+        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Healthy);
         getCaptured().Should().Be("Host=fallback;Database=fallbackdb");
@@ -202,18 +213,19 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy1_NoConnectionString_FallsThrough()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = this.WriteTempVaultFile(new Dictionary<string, string>
         {
             ["db_host"] = "vaulthost",
             ["db_username"] = "user",
             ["db_password"] = "pass",
             ["db_name"] = "vaultdb",
         });
-        var config = BuildConfig(new Dictionary<string, string?>());
+
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Healthy);
     }
@@ -223,17 +235,18 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy2_VaultFileAbsent_FallsThroughToStrategy3()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["db_host"] = "confighost",
             ["db_username"] = "user",
             ["db_password"] = "pass",
             ["db_name"] = "configdb",
         });
+
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/vault/path.json" };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Healthy);
     }
@@ -241,7 +254,7 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy2_VaultFilePresentWithAllKeys_CallsProber()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = this.WriteTempVaultFile(new Dictionary<string, string>
         {
             ["db_host"] = "pghost",
             ["db_username"] = "pguser",
@@ -249,15 +262,16 @@ public class NpgsqlHealthCheckTests : IDisposable
             ["db_name"] = "pgdb",
             ["db_port"] = "5433",
         });
-        var config = BuildConfig(new Dictionary<string, string?>());
-        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
-        var prober = CaptureProber(out var getCaptured);
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, prober);
-        var result = await hc.CheckHealthAsync(null);
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
+        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
+        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Healthy);
-        var cs = getCaptured()!;
+        string cs = getCaptured()!;
         cs.Should().Contain("Host=pghost");
         cs.Should().Contain("Username=pguser");
         cs.Should().Contain("Database=pgdb");
@@ -267,17 +281,18 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy2_VaultFilePresentHostAbsent_ReturnsUnhealthy()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = this.WriteTempVaultFile(new Dictionary<string, string>
         {
             ["db_username"] = "user",
             ["db_password"] = "pass",
             ["db_name"] = "db",
         });
-        var config = BuildConfig(new Dictionary<string, string?>());
+
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("db_host");
@@ -286,17 +301,18 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy2_VaultFilePresentUsernameAbsent_ReturnsUnhealthy()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = this.WriteTempVaultFile(new Dictionary<string, string>
         {
             ["db_host"] = "host",
             ["db_password"] = "pass",
             ["db_name"] = "db",
         });
-        var config = BuildConfig(new Dictionary<string, string?>());
+
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("db_username");
@@ -305,17 +321,18 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy2_VaultFilePresentPasswordAbsent_ReturnsUnhealthy()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = this.WriteTempVaultFile(new Dictionary<string, string>
         {
             ["db_host"] = "host",
             ["db_username"] = "user",
             ["db_name"] = "db",
         });
-        var config = BuildConfig(new Dictionary<string, string?>());
+
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("db_password");
@@ -324,17 +341,18 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy2_VaultFilePresentDbNameAbsent_ReturnsUnhealthy()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = this.WriteTempVaultFile(new Dictionary<string, string>
         {
             ["db_host"] = "host",
             ["db_username"] = "user",
             ["db_password"] = "pass",
         });
-        var config = BuildConfig(new Dictionary<string, string?>());
+
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("db_name");
@@ -343,18 +361,20 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy2_VaultFileMalformed_ReturnsUnhealthy_DoesNotFallThrough()
     {
-        var vaultPath = WriteTempVaultFile("not valid json {{{");
-        var config = BuildConfig(new Dictionary<string, string?>
+        string vaultPath = this.WriteTempVaultFile("not valid json {{{");
+
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["db_host"] = "shouldnotbeused",
             ["db_username"] = "user",
             ["db_password"] = "pass",
             ["db_name"] = "db",
         });
+
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("could not be read or parsed");
@@ -365,17 +385,18 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy3_DbHostConfigured_CallsProber()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["db_host"] = "s3host",
             ["db_username"] = "s3user",
             ["db_password"] = "s3pass",
             ["db_name"] = "s3db",
         });
+
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Healthy);
     }
@@ -383,17 +404,18 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy3_DB_HOST_Configured_CallsProber()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["DB_HOST"] = "s3host",
             ["DB_USERNAME"] = "s3user",
             ["DB_PASSWORD"] = "s3pass",
             ["DB_NAME"] = "s3db",
         });
+
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Healthy);
     }
@@ -401,11 +423,11 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Strategy3_NoHostConfigured_ReturnsUnhealthy()
     {
-        var config = BuildConfig(new Dictionary<string, string?>());
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("no connection string, vault secrets, or configuration keys found");
@@ -417,22 +439,24 @@ public class NpgsqlHealthCheckTests : IDisposable
     public async Task StrategyOrder_VaultFilePresentBlocksStrategy3()
     {
         // Vault file present with missing keys → unhealthy, NOT fallthrough to Strategy 3
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = this.WriteTempVaultFile(new Dictionary<string, string>
         {
             ["db_host"] = "vaulthost",
             // Missing other required keys
         });
-        var config = BuildConfig(new Dictionary<string, string?>
+
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["db_host"] = "confighost",
             ["db_username"] = "user",
             ["db_password"] = "pass",
             ["db_name"] = "db",
         });
+
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("db_username");
@@ -441,22 +465,24 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task StrategyOrder_ConnectionStringTakesPrecedenceOverVault()
     {
-        var vaultPath = WriteTempVaultFile(new Dictionary<string, string>
+        string vaultPath = this.WriteTempVaultFile(new Dictionary<string, string>
         {
             ["db_host"] = "vaulthost",
             ["db_username"] = "user",
             ["db_password"] = "pass",
             ["db_name"] = "vaultdb",
         });
-        var config = BuildConfig(new Dictionary<string, string?>
+
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["ConnectionStrings:DefaultConnection"] = "Host=connstring;Database=conndb",
         });
-        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
-        var prober = CaptureProber(out var getCaptured);
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, prober);
-        var result = await hc.CheckHealthAsync(null);
+        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
+        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Healthy);
         getCaptured().Should().Be("Host=connstring;Database=conndb");
@@ -467,11 +493,11 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task NoStrategy_ReturnsUnhealthyWithDescriptiveMessage()
     {
-        var config = BuildConfig(new Dictionary<string, string?>());
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/vault/path.json" };
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, HealthyProber());
-        var result = await hc.CheckHealthAsync(null);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, HealthyProber());
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("no connection string, vault secrets, or configuration keys found");
@@ -480,19 +506,42 @@ public class NpgsqlHealthCheckTests : IDisposable
     [Fact]
     public async Task Prober_ExceptionIsCaught_ReturnsUnhealthySanitizedMessage()
     {
-        var config = BuildConfig(new Dictionary<string, string?>
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
         {
             ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=test",
         });
-        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
-        Func<string, CancellationToken, Task<HealthCheckResult>> throwingProber =
-            (_, _) => throw new InvalidOperationException("secret connection details here");
 
-        var hc = new Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheck(config, options, _loggerMock.Object, throwingProber);
-        var result = await hc.CheckHealthAsync(null);
+        var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
+
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, ThrowingProber);
+        HealthCheckResult result = await hc.CheckHealthAsync(null);
 
         result.Status.Should().Be(HealthStatus.Unhealthy);
         result.Description.Should().Contain("InvalidOperationException");
         result.Description.Should().NotContain("secret connection details here");
+        
+        // ReSharper disable once SeparateLocalFunctionsWithJumpStatement
+        static Task<HealthCheckResult> ThrowingProber(string s, CancellationToken cancellationToken) => throw new InvalidOperationException("secret connection details here");
+    }
+
+    [Fact]
+    public void Options_CommandText_IsConfigurable()
+    {
+        // Verifies that a custom CommandText is stored on the options and would be
+        // used by DefaultProbeAsync (which reads this.options.CommandText).
+        // Full end-to-end proof requires a database; this validates the option wiring.
+        var options = new NpgsqlHealthCheckOptions { CommandText = "SELECT version()" };
+
+        options.CommandText.Should().Be("SELECT version()");
+
+        // Construct health check without a custom prober — DefaultProbeAsync will be used,
+        // which reads this.options.CommandText (non-static method).
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object);
+
+        // The health check was constructed successfully with the custom option.
+        // DefaultProbeAsync is an instance method that reads this.options.CommandText,
+        // so the configured value will flow through when a real connection is available.
+        hc.Should().NotBeNull();
     }
 }

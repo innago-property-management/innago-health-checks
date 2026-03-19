@@ -22,6 +22,17 @@
       "sealed_at": "2026-03-18T15:15:41.036023+00:00",
       "sealed_by_identity": "chris@innago.com",
       "sealed_by_commit": "1b886f3f6f7eab787c15e82eea3d0ca6c697a091"
+    },
+    "session-1773846942-feat-dynamic-health-checks": {
+      "branch": "feat/dynamic-health-checks",
+      "worktree": "/Users/christopheranderson/repos/innago-tcp-health-probe",
+      "started_at": "2026-03-18T15:15:43.030814+00:00",
+      "agent": "unknown",
+      "chain_hash": "sha256:05f1fb905b6a2137a2a8f1b4e0e4c6459f0fc9259bea4b61d66d2d9e68a0c4dd",
+      "sealed": true,
+      "sealed_at": "2026-03-18T21:06:31.406101+00:00",
+      "sealed_by_identity": "chris@innago.com",
+      "sealed_by_commit": "d16d1ed9c6b698bf836f2dabc8478955d54a8648"
     }
   }
 }

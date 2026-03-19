@@ -21,8 +21,8 @@ dotnet test --filter "FullyQualifiedName~TestMethodName"
 # Release build (warnings-as-errors, all analyzers active)
 dotnet build --configuration Release
 
-# Generate docs (xmldocmd must be installed as tool)
-./makedocs.sh
+# Generate docs (auto-generated on Debug build via DefaultDocumentation)
+dotnet build
 
 # Package
 dotnet pack

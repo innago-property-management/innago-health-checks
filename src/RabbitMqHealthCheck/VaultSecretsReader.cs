@@ -24,7 +24,7 @@ internal static class VaultSecretsReader
     /// Returns:
     ///   HasSucceeded + null         = file was absent; caller may fall through
     ///   HasSucceeded + VaultSecrets = file read and parsed; caller uses .Values
-    ///   HasFailed    + Exception    = file present but unreadable/unparseable;
+    ///   HasFailed    + Exception    = file is present but unreadable/unparseable;
     ///                                 caller must return Unhealthy — do NOT fall through
     /// </summary>
     internal static Result<VaultSecrets?> TryRead(string path, ILogger logger)
@@ -32,7 +32,8 @@ internal static class VaultSecretsReader
         try
         {
             string json = File.ReadAllText(path);
-            var dict = JsonSerializer.Deserialize(json, VaultSecretsJsonContext.Default.DictionaryStringString);
+            Dictionary<string, string>? dict = JsonSerializer.Deserialize(json, VaultSecretsJsonContext.Default.DictionaryStringString);
+
             return dict is null
                 ? new Result<VaultSecrets?>((VaultSecrets?)null)
                 : new Result<VaultSecrets?>(new VaultSecrets(dict));
