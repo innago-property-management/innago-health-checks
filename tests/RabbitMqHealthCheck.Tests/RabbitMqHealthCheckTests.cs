@@ -17,7 +17,7 @@ using RabbitMQ.Client;
 using Xunit.OpenCategories;
 
 [Category("RabbitMqHealthCheck")]
-public class RabbitMqHealthCheckTests
+public class RabbitMqHealthCheckTests : IDisposable
 {
     #region Options defaults
 
@@ -610,12 +610,30 @@ public class RabbitMqHealthCheckTests
         };
     }
 
-    private static string WriteTempVaultFile(Dictionary<string, string> secrets)
+    private readonly List<string> tempFiles = [];
+
+    private string WriteTempVaultFile(Dictionary<string, string> secrets)
     {
         string path = Path.GetTempFileName();
+        this.tempFiles.Add(path);
         string json = System.Text.Json.JsonSerializer.Serialize(secrets);
         File.WriteAllText(path, json);
         return path;
+    }
+
+    public void Dispose()
+    {
+        foreach (string path in this.tempFiles)
+        {
+            try
+            {
+                File.Delete(path);
+            }
+            catch
+            {
+                // Best-effort cleanup
+            }
+        }
     }
 
     #endregion

@@ -187,12 +187,12 @@ internal sealed class NpgsqlHealthCheck : IHealthCheck
         }
     }
 
-    private static async Task<HealthCheckResult> DefaultProbeAsync(string connectionString, CancellationToken cancellationToken)
+    private async Task<HealthCheckResult> DefaultProbeAsync(string connectionString, CancellationToken cancellationToken)
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using NpgsqlCommand command = connection.CreateCommand();
-        command.CommandText = "SELECT 1";
+        command.CommandText = this.options.CommandText;
         await command.ExecuteScalarAsync(cancellationToken);
         return HealthCheckResult.Healthy("Npgsql health check: connection probe succeeded.");
     }

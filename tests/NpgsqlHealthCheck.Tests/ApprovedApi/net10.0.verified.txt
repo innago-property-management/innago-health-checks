@@ -5,11 +5,8 @@ namespace Innago.Shared.HealthChecks.Npgsql
 {
     public static class HealthChecksBuilderExtensions
     {
-        extension(Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder builder)
-        {
-            public Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoNpgsql() { }
-            public Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoNpgsql(System.Action<Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions> configure) { }
-        }
+        public static Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoNpgsql(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder builder) { }
+        public static Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddInnagoNpgsql(this Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder builder, System.Action<Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions> configure) { }
     }
     public sealed class NpgsqlHealthCheckOptions
     {

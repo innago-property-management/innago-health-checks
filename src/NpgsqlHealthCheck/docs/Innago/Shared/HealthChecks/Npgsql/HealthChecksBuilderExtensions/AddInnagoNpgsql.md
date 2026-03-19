@@ -22,6 +22,8 @@ public static Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddI
 
 `builder` [Microsoft\.Extensions\.DependencyInjection\.IHealthChecksBuilder](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.dependencyinjection.ihealthchecksbuilder 'Microsoft\.Extensions\.DependencyInjection\.IHealthChecksBuilder')
 
+The health checks builder\.
+
 #### Returns
 [Microsoft\.Extensions\.DependencyInjection\.IHealthChecksBuilder](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.dependencyinjection.ihealthchecksbuilder 'Microsoft\.Extensions\.DependencyInjection\.IHealthChecksBuilder')  
 The [Microsoft\.Extensions\.DependencyInjection\.IHealthChecksBuilder](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.dependencyinjection.ihealthchecksbuilder 'Microsoft\.Extensions\.DependencyInjection\.IHealthChecksBuilder') for chaining\.
@@ -40,6 +42,8 @@ public static Microsoft.Extensions.DependencyInjection.IHealthChecksBuilder AddI
 <a name='Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions.AddInnagoNpgsql(thisMicrosoft.Extensions.DependencyInjection.IHealthChecksBuilder,System.Action_Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions_).builder'></a>
 
 `builder` [Microsoft\.Extensions\.DependencyInjection\.IHealthChecksBuilder](https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.dependencyinjection.ihealthchecksbuilder 'Microsoft\.Extensions\.DependencyInjection\.IHealthChecksBuilder')
+
+The health checks builder\.
 
 <a name='Innago.Shared.HealthChecks.Npgsql.HealthChecksBuilderExtensions.AddInnagoNpgsql(thisMicrosoft.Extensions.DependencyInjection.IHealthChecksBuilder,System.Action_Innago.Shared.HealthChecks.Npgsql.NpgsqlHealthCheckOptions_).configure'></a>
 

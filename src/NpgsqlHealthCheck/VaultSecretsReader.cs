@@ -14,7 +14,7 @@ using Microsoft.Extensions.Logging;
 
 [JsonSerializable(typeof(Dictionary<string, string>))]
 [JsonSourceGenerationOptions(PropertyNameCaseInsensitive = true)]
-internal partial class VaultSecretsJsonContext : JsonSerializerContext;
+internal partial class VaultSecretsJsonContext : JsonSerializerContext { }
 
 internal readonly record struct VaultSecrets(Dictionary<string, string> Values);
 
