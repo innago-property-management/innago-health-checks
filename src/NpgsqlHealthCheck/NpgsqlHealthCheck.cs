@@ -18,13 +18,13 @@ internal sealed class NpgsqlHealthCheck : IHealthCheck
     private readonly IConfiguration configuration;
     private readonly NpgsqlHealthCheckOptions options;
     private readonly ILogger<NpgsqlHealthCheck> logger;
-    private readonly Func<string, CancellationToken, Task<HealthCheckResult>> prober;
+    private readonly Func<string, string, CancellationToken, Task<HealthCheckResult>> prober;
 
     internal NpgsqlHealthCheck(
         IConfiguration configuration,
         NpgsqlHealthCheckOptions options,
         ILogger<NpgsqlHealthCheck> logger,
-        Func<string, CancellationToken, Task<HealthCheckResult>>? prober = null)
+        Func<string, string, CancellationToken, Task<HealthCheckResult>>? prober = null)
     {
         this.configuration = configuration;
         this.options = options;
@@ -172,7 +172,7 @@ internal sealed class NpgsqlHealthCheck : IHealthCheck
     {
         try
         {
-            return await this.prober(connectionString, cancellationToken);
+            return await this.prober(connectionString, this.options.CommandText, cancellationToken);
         }
         catch (OperationCanceledException)
         {
@@ -187,12 +187,12 @@ internal sealed class NpgsqlHealthCheck : IHealthCheck
         }
     }
 
-    private async Task<HealthCheckResult> DefaultProbeAsync(string connectionString, CancellationToken cancellationToken)
+    private static async Task<HealthCheckResult> DefaultProbeAsync(string connectionString, string commandText, CancellationToken cancellationToken)
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync(cancellationToken);
         await using NpgsqlCommand command = connection.CreateCommand();
-        command.CommandText = this.options.CommandText;
+        command.CommandText = commandText;
         await command.ExecuteScalarAsync(cancellationToken);
         return HealthCheckResult.Healthy("Npgsql health check: connection probe succeeded.");
     }
