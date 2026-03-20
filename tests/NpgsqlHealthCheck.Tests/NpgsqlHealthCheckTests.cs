@@ -55,17 +55,20 @@ public sealed class NpgsqlHealthCheckTests : IDisposable
     private static IConfiguration BuildConfig(Dictionary<string, string?> values) =>
         new ConfigurationBuilder().AddInMemoryCollection(values).Build();
 
-    private static Func<string, CancellationToken, Task<HealthCheckResult>> HealthyProber() =>
-        (_, _) => Task.FromResult(HealthCheckResult.Healthy("ok"));
+    private static Func<string, string, CancellationToken, Task<HealthCheckResult>> HealthyProber() =>
+        (_, _, _) => Task.FromResult(HealthCheckResult.Healthy("ok"));
 
-    private static Func<string, CancellationToken, Task<HealthCheckResult>> CaptureProber(out Func<string?> getCaptured)
+    private static Func<string, string, CancellationToken, Task<HealthCheckResult>> CaptureProber(out Func<string?> getCapturedCs, out Func<string?> getCapturedCmd)
     {
-        string? captured = null;
-        getCaptured = () => captured;
+        string? capturedCs = null;
+        string? capturedCmd = null;
+        getCapturedCs = () => capturedCs;
+        getCapturedCmd = () => capturedCmd;
 
-        return (cs, _) =>
+        return (cs, cmd, _) =>
         {
-            captured = cs;
+            capturedCs = cs;
+            capturedCmd = cmd;
             return Task.FromResult(HealthCheckResult.Healthy("ok"));
         };
     }
@@ -142,7 +145,7 @@ public sealed class NpgsqlHealthCheckTests : IDisposable
         });
 
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
-        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+        var prober = CaptureProber(out Func<string?> getCaptured, out _);
 
         var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
         HealthCheckResult result = await hc.CheckHealthAsync(null);
@@ -160,7 +163,7 @@ public sealed class NpgsqlHealthCheckTests : IDisposable
         });
 
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
-        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+        var prober = CaptureProber(out Func<string?> getCaptured, out _);
 
         var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
         HealthCheckResult result = await hc.CheckHealthAsync(null);
@@ -183,7 +186,7 @@ public sealed class NpgsqlHealthCheckTests : IDisposable
             VaultSecretsPath = "/nonexistent/path",
         };
 
-        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+        var prober = CaptureProber(out Func<string?> getCaptured, out _);
 
         var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
         HealthCheckResult result = await hc.CheckHealthAsync(null);
@@ -201,7 +204,7 @@ public sealed class NpgsqlHealthCheckTests : IDisposable
         });
 
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = "/nonexistent/path" };
-        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+        var prober = CaptureProber(out Func<string?> getCaptured, out _);
 
         var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
         HealthCheckResult result = await hc.CheckHealthAsync(null);
@@ -265,7 +268,7 @@ public sealed class NpgsqlHealthCheckTests : IDisposable
 
         IConfiguration config = BuildConfig(new Dictionary<string, string?>());
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
-        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+        var prober = CaptureProber(out Func<string?> getCaptured, out _);
 
         var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
         HealthCheckResult result = await hc.CheckHealthAsync(null);
@@ -479,7 +482,7 @@ public sealed class NpgsqlHealthCheckTests : IDisposable
         });
 
         var options = new NpgsqlHealthCheckOptions { VaultSecretsPath = vaultPath };
-        Func<string, CancellationToken, Task<HealthCheckResult>> prober = CaptureProber(out Func<string?> getCaptured);
+        var prober = CaptureProber(out Func<string?> getCaptured, out _);
 
         var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
         HealthCheckResult result = await hc.CheckHealthAsync(null);
@@ -521,27 +524,28 @@ public sealed class NpgsqlHealthCheckTests : IDisposable
         result.Description.Should().NotContain("secret connection details here");
         
         // ReSharper disable once SeparateLocalFunctionsWithJumpStatement
-        static Task<HealthCheckResult> ThrowingProber(string s, CancellationToken cancellationToken) => throw new InvalidOperationException("secret connection details here");
+        static Task<HealthCheckResult> ThrowingProber(string s, string cmd, CancellationToken cancellationToken) => throw new InvalidOperationException("secret connection details here");
     }
 
     [Fact]
-    public void Options_CommandText_IsConfigurable()
+    public async Task CommandText_FlowsThroughToProber()
     {
-        // Verifies that a custom CommandText is stored on the options and would be
-        // used by DefaultProbeAsync (which reads this.options.CommandText).
-        // Full end-to-end proof requires a database; this validates the option wiring.
-        var options = new NpgsqlHealthCheckOptions { CommandText = "SELECT version()" };
+        IConfiguration config = BuildConfig(new Dictionary<string, string?>
+        {
+            ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=test",
+        });
 
-        options.CommandText.Should().Be("SELECT version()");
+        var options = new NpgsqlHealthCheckOptions
+        {
+            VaultSecretsPath = "/nonexistent/path",
+            CommandText = "SELECT version()",
+        };
 
-        // Construct health check without a custom prober — DefaultProbeAsync will be used,
-        // which reads this.options.CommandText (non-static method).
-        IConfiguration config = BuildConfig(new Dictionary<string, string?>());
-        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object);
+        var prober = CaptureProber(out _, out Func<string?> getCapturedCmd);
+        var hc = new NpgsqlHealthCheck(config, options, this.loggerMock.Object, prober);
 
-        // The health check was constructed successfully with the custom option.
-        // DefaultProbeAsync is an instance method that reads this.options.CommandText,
-        // so the configured value will flow through when a real connection is available.
-        hc.Should().NotBeNull();
+        await hc.CheckHealthAsync(null);
+
+        getCapturedCmd().Should().Be("SELECT version()");
     }
 }
