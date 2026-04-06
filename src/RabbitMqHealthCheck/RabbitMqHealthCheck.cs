@@ -202,10 +202,11 @@ internal sealed class RabbitMqHealthCheck : IHealthCheck
     {
         try
         {
-            await using IConnection connection = await factory.CreateConnectionAsync(cancellationToken).ConfigureAwait(false);
-
-            // Connection.IsOpen after CreateConnectionAsync proves TCP, TLS, AMQP handshake, and auth.
+            // v6 CreateConnection() is synchronous — run on thread pool to avoid blocking.
+            // Connection.IsOpen proves TCP, TLS, AMQP handshake, and auth.
             // No channel needed — see DESIGN.md §Design Notes.
+            using IConnection connection = await Task.Run(factory.CreateConnection, cancellationToken).ConfigureAwait(false);
+
             return connection.IsOpen
                 ? HealthCheckResult.Healthy()
                 : HealthCheckResult.Unhealthy("RabbitMQ connection is not open.");
